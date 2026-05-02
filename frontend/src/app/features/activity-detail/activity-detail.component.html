@@ -1,0 +1,123 @@
+<div class="page-container">
+  <!-- Back button -->
+  <div class="breadcrumb">
+    <button mat-button routerLink="/activities">
+      <mat-icon>arrow_back</mat-icon>
+      Torna alla lista
+    </button>
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="48"></mat-spinner>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (error()) {
+    <div class="error-banner">
+      <mat-icon>error_outline</mat-icon>
+      {{ error() }}
+    </div>
+  }
+
+  @if (activity()) {
+    <!-- Title row -->
+    <div class="detail-header">
+      <div class="title-status">
+        <div class="status-badge" [class.done]="activity()!.done">
+          <mat-icon>{{ activity()!.done ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+          {{ activity()!.done ? 'Completata' : 'Da fare' }}
+        </div>
+        <h1 class="detail-title" [class.done]="activity()!.done">
+          {{ activity()!.title }}
+        </h1>
+      </div>
+      <div class="detail-actions">
+        @if (!activity()!.done) {
+          <button mat-flat-button color="primary" (click)="openMarkDoneDialog()">
+            <mat-icon>check_circle_outline</mat-icon>
+            Segna come fatta
+          </button>
+        } @else {
+          <button mat-stroked-button (click)="undoMarkDone()">
+            <mat-icon>undo</mat-icon>
+            Annulla completamento
+          </button>
+        }
+        <button mat-stroked-button (click)="openEditDialog()">
+          <mat-icon>edit</mat-icon>
+          Modifica
+        </button>
+        <button mat-stroked-button color="warn" (click)="deleteActivity()">
+          <mat-icon>delete_outline</mat-icon>
+          Elimina
+        </button>
+      </div>
+    </div>
+
+    <!-- Chips row -->
+    <div class="chips-row">
+      <mat-chip class="type-chip">{{ typeLabel(activity()!.type) }}</mat-chip>
+      @if (activity()!.guideType) {
+        <mat-chip class="guide-chip">
+          <mat-icon matChipAvatar>person</mat-icon>
+          {{ guideLabel(activity()!.guideType) }}
+        </mat-chip>
+      }
+      @if (activity()!.link) {
+        <mat-chip class="link-chip"
+          (click)="openLink(activity()!.link)"
+          matTooltip="Apri link esterno">
+          <mat-icon matChipAvatar>open_in_new</mat-icon>
+          Apri link
+        </mat-chip>
+      }
+    </div>
+
+    <!-- Info grid -->
+    <div class="info-grid">
+      <!-- Pre-activity notes -->
+      <mat-card class="info-card">
+        <mat-card-header>
+          <mat-icon mat-card-avatar>notes</mat-icon>
+          <mat-card-title>Note</mat-card-title>
+          <mat-card-subtitle>Informazioni pre-attività</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <p class="notes-text">{{ activity()!.notes || 'Nessuna nota' }}</p>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Post-activity info -->
+      @if (activity()!.done) {
+        <mat-card class="info-card done-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar>rate_review</mat-icon>
+            <mat-card-title>Post-attività</mat-card-title>
+            <mat-card-subtitle>
+              Completata il {{ formatDate(activity()!.doneAt!) }}
+            </mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            @if (activity()!.guideName) {
+              <div class="guide-name-row">
+                <mat-icon>person</mat-icon>
+                <strong>Guida:</strong> {{ activity()!.guideName }}
+              </div>
+            }
+            <p class="notes-text">{{ activity()!.doneNotes || 'Nessuna nota post-attività' }}</p>
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+
+    <!-- Metadata -->
+    <div class="metadata">
+      <span>Creata il {{ formatDate(activity()!.createdAt) }}</span>
+      <span class="meta-sep">·</span>
+      <span>Aggiornata il {{ formatDate(activity()!.updatedAt) }}</span>
+    </div>
+  }
+</div>
