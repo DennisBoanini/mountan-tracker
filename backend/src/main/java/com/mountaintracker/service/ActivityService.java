@@ -1,7 +1,11 @@
 package com.mountaintracker.service;
 
-import com.mountaintracker.dto.ActivityDtos.*;
+import com.mountaintracker.dto.ActivityDtos.ActivityFilters;
+import com.mountaintracker.dto.ActivityDtos.CreateActivityRequest;
+import com.mountaintracker.dto.ActivityDtos.MarkDoneRequest;
+import com.mountaintracker.dto.ActivityDtos.UpdateActivityRequest;
 import com.mountaintracker.exception.ActivityNotFoundException;
+import com.mountaintracker.mapper.ActivityMapper;
 import com.mountaintracker.model.Activity;
 import com.mountaintracker.model.Activity.ActivityType;
 import com.mountaintracker.model.Activity.GuideType;
@@ -17,6 +21,7 @@ import java.util.List;
 public class ActivityService {
 
     private final ActivityRepository repository;
+    private final ActivityMapper mapper;
 
     public List<Activity> findAll(ActivityFilters filters) {
         ActivityType type = filters.type();
@@ -47,28 +52,12 @@ public class ActivityService {
     }
 
     public Activity create(CreateActivityRequest req) {
-        Activity activity = new Activity();
-        activity.setTitle(req.title());
-        activity.setNotes(req.notes() != null ? req.notes() : "");
-        activity.setLink(req.link() != null ? req.link() : "");
-        activity.setType(req.type());
-        activity.setGuideType(req.guideType());
-        activity.setCreatedAt(Instant.now());
-        activity.setUpdatedAt(Instant.now());
-        return repository.save(activity);
+        return repository.save(mapper.toEntity(req));
     }
 
     public Activity update(String id, UpdateActivityRequest req) {
         Activity activity = findById(id);
-
-        if (req.title() != null) activity.setTitle(req.title());
-        if (req.notes() != null) activity.setNotes(req.notes());
-        if (req.link() != null) activity.setLink(req.link());
-        if (req.type() != null) activity.setType(req.type());
-        // guideType può essere esplicitamente null per rimuovere la guida
-        activity.setGuideType(req.guideType());
-        activity.setUpdatedAt(Instant.now());
-
+        mapper.updateEntity(req, activity);
         return repository.save(activity);
     }
 
@@ -81,11 +70,7 @@ public class ActivityService {
 
     public Activity markDone(String id, MarkDoneRequest req) {
         Activity activity = findById(id);
-        activity.setDone(true);
-        activity.setDoneAt(Instant.now());
-        activity.setDoneNotes(req.doneNotes());
-        activity.setGuideName(req.guideName());
-        activity.setUpdatedAt(Instant.now());
+        mapper.applyMarkDone(req, activity);
         return repository.save(activity);
     }
 

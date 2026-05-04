@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -9,7 +9,8 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { Activity, GUIDE_TYPE_LABELS } from '../../core/models/activity.model';
+import { Activity } from '../../core/models/activity.model';
+import { MetadataService } from '../../core/services/metadata.service';
 
 export interface MarkDoneDialogData {
   activity: Activity;
@@ -38,7 +39,7 @@ export interface MarkDoneDialogResult {
     <mat-dialog-content>
       <p class="activity-title">{{ data.activity.title }}</p>
 
-      @if (needsGuide()) {
+      @if (needsGuide) {
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Nome {{ guideLabel() }}</mat-label>
           <input matInput [(ngModel)]="guideName" placeholder="es. Mario Rossi" />
@@ -83,17 +84,15 @@ export interface MarkDoneDialogResult {
 export class MarkDoneDialogComponent {
   data: MarkDoneDialogData = inject(MAT_DIALOG_DATA);
   private dialogRef = inject(MatDialogRef<MarkDoneDialogComponent>);
+  private meta = inject(MetadataService);
 
   doneNotes = '';
   guideName = '';
 
-  needsGuide = signal(
-    !!this.data.activity.guideType
-  );
+  readonly needsGuide = !!this.data.activity.guideType;
 
   guideLabel(): string {
-    const gt = this.data.activity.guideType;
-    return gt ? GUIDE_TYPE_LABELS[gt] : 'Guida';
+    return this.meta.guideTypeLabel(this.data.activity.guideType);
   }
 
   confirm(): void {

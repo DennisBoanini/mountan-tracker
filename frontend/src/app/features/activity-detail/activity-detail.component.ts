@@ -11,11 +11,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivityService } from '../../core/services/activity.service';
-import {
-  Activity,
-  ACTIVITY_TYPE_LABELS,
-  GUIDE_TYPE_LABELS,
-} from '../../core/models/activity.model';
+import { Activity } from '../../core/models/activity.model';
+import { MetadataService } from '../../core/services/metadata.service';
 import { ActivityFormDialogComponent } from '../../shared/components/activity-form-dialog.component';
 import { MarkDoneDialogComponent } from '../../shared/components/mark-done-dialog.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog.component';
@@ -43,6 +40,7 @@ export class ActivityDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private activityService = inject(ActivityService);
+  protected meta = inject(MetadataService);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
 
@@ -65,12 +63,11 @@ export class ActivityDetailComponent implements OnInit {
   }
 
   typeLabel(type: string): string {
-    return ACTIVITY_TYPE_LABELS[type as keyof typeof ACTIVITY_TYPE_LABELS] ?? type;
+    return this.meta.activityTypeLabel(type);
   }
 
   guideLabel(gt: string | null): string {
-    if (!gt) return '';
-    return GUIDE_TYPE_LABELS[gt as keyof typeof GUIDE_TYPE_LABELS] ?? gt;
+    return this.meta.guideTypeLabel(gt);
   }
 
   formatDate(dateStr: string): string {

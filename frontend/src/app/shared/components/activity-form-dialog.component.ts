@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, FormArray } from '@angular/forms';
 import {
   MatDialogModule,
   MatDialogRef,
@@ -10,16 +10,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import {
-  Activity,
-  ActivityType,
-  GuideType,
-  ACTIVITY_TYPE_LABELS,
-  GUIDE_TYPE_LABELS,
-} from '../../core/models/activity.model';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { Activity, ActivityType, GuideType } from '../../core/models/activity.model';
+import { MetadataService } from '../../core/services/metadata.service';
 
 export interface ActivityFormDialogData {
-  activity?: Activity; // se presente è edit, altrimenti create
+  activity?: Activity;
 }
 
 @Component({
@@ -33,6 +30,8 @@ export interface ActivityFormDialogData {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatIconModule,
+    MatTooltipModule,
   ],
   template: `
     <h2 mat-dialog-title>
@@ -51,7 +50,7 @@ export interface ActivityFormDialogData {
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Tipo attività *</mat-label>
           <mat-select formControlName="type">
-            @for (entry of activityTypes; track entry.value) {
+            @for (entry of meta.activityTypes(); track entry.value) {
               <mat-option [value]="entry.value">{{ entry.label }}</mat-option>
             }
           </mat-select>
@@ -64,17 +63,41 @@ export interface ActivityFormDialogData {
           <mat-label>Tipo guida</mat-label>
           <mat-select formControlName="guideType">
             <mat-option [value]="null">Nessuna guida</mat-option>
-            @for (entry of guideTypes; track entry.value) {
+            @for (entry of meta.guideTypes(); track entry.value) {
               <mat-option [value]="entry.value">{{ entry.label }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Link</mat-label>
-          <input matInput formControlName="link" placeholder="https://..." type="url" />
-          <mat-hint>Link a relazione, scheda gita, ecc.</mat-hint>
-        </mat-form-field>
+        <!-- Links section -->
+        <div class="links-section" formArrayName="links">
+          <div class="links-header">
+            <span class="links-label">Link</span>
+            <button mat-icon-button type="button" (click)="addLink()" matTooltip="Aggiungi link">
+              <mat-icon>add_circle_outline</mat-icon>
+            </button>
+          </div>
+          @for (ctrl of linksArray.controls; track $index) {
+            <div [formGroupName]="$index" class="link-row">
+              <mat-form-field appearance="outline" class="link-name-field">
+                <mat-label>Nome *</mat-label>
+                <input matInput formControlName="name" placeholder="es. Relazione Gita" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="link-url-field">
+                <mat-label>URL</mat-label>
+                <input matInput formControlName="url" placeholder="https://..." type="url" />
+              </mat-form-field>
+              <button mat-icon-button type="button" color="warn"
+                (click)="removeLink($index)"
+                matTooltip="Rimuovi link">
+                <mat-icon>remove_circle_outline</mat-icon>
+              </button>
+            </div>
+          }
+          @if (linksArray.length === 0) {
+            <p class="no-links-hint">Nessun link. Clicca + per aggiungerne uno.</p>
+          }
+        </div>
 
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Note</mat-label>
@@ -105,12 +128,43 @@ export interface ActivityFormDialogData {
       margin-bottom: 8px;
     }
     mat-dialog-content {
-      min-width: 420px;
+      min-width: 480px;
     }
     .form-grid {
       display: flex;
       flex-direction: column;
       padding-top: 8px;
+    }
+    .links-section {
+      margin-bottom: 12px;
+    }
+    .links-header {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+    .links-label {
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.6);
+      flex: 1;
+    }
+    .link-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .link-name-field {
+      flex: 0 0 160px;
+    }
+    .link-url-field {
+      flex: 1;
+    }
+    .no-links-hint {
+      font-size: 13px;
+      color: rgba(0, 0, 0, 0.4);
+      margin: 0 0 8px 0;
     }
   `],
 })
@@ -118,26 +172,21 @@ export class ActivityFormDialogComponent implements OnInit {
   data: ActivityFormDialogData = inject(MAT_DIALOG_DATA);
   private dialogRef = inject(MatDialogRef<ActivityFormDialogComponent>);
   private fb = inject(FormBuilder);
+  protected meta = inject(MetadataService);
 
   isEdit = !!this.data.activity;
-
-  activityTypes = Object.entries(ACTIVITY_TYPE_LABELS).map(([value, label]) => ({
-    value: value as ActivityType,
-    label,
-  }));
-
-  guideTypes = Object.entries(GUIDE_TYPE_LABELS).map(([value, label]) => ({
-    value: value as GuideType,
-    label,
-  }));
 
   form = this.fb.group({
     title: ['', Validators.required],
     type: ['' as ActivityType, Validators.required],
     guideType: [null as GuideType],
-    link: [''],
+    links: this.fb.array([]),
     notes: [''],
   });
+
+  get linksArray(): FormArray {
+    return this.form.get('links') as FormArray;
+  }
 
   ngOnInit(): void {
     if (this.data.activity) {
@@ -146,10 +195,20 @@ export class ActivityFormDialogComponent implements OnInit {
         title: a.title,
         type: a.type,
         guideType: a.guideType,
-        link: a.link,
         notes: a.notes,
       });
+      (a.links || []).forEach(l => {
+        this.linksArray.push(this.fb.group({ name: [l.name, Validators.required], url: [l.url] }));
+      });
     }
+  }
+
+  addLink(): void {
+    this.linksArray.push(this.fb.group({ name: ['', Validators.required], url: [''] }));
+  }
+
+  removeLink(i: number): void {
+    this.linksArray.removeAt(i);
   }
 
   confirm(): void {

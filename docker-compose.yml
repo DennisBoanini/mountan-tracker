@@ -5,7 +5,6 @@ services:
     restart: unless-stopped
     volumes:
       - mongo_data:/data/db
-      - ./mongo-init/init.js:/docker-entrypoint-initdb.d/init.js:ro
     environment:
       MONGO_INITDB_DATABASE: mountain_tracker
     healthcheck:
@@ -23,16 +22,22 @@ services:
       mongo:
         condition: service_healthy
     environment:
-      MONGO_URI: mongodb://mongo:27017
-      DB_NAME: mountain_tracker
+      MONGO_URI: mongodb://mongo:27017/mountain_tracker
       PORT: 3000
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   frontend:
     build: ./frontend
     container_name: mountain-tracker-frontend
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - "4200:80"
 

@@ -22,7 +22,7 @@
         <mat-label>Tipo</mat-label>
         <mat-select [ngModel]="filterType()" (ngModelChange)="filterType.set($event); applyFilters()">
           <mat-option value="">Tutti</mat-option>
-          @for (entry of activityTypes; track entry.value) {
+          @for (entry of meta.activityTypes(); track entry.value) {
             <mat-option [value]="entry.value">{{ entry.label }}</mat-option>
           }
         </mat-select>
@@ -41,7 +41,7 @@
         <mat-label>Guida</mat-label>
         <mat-select [ngModel]="filterGuide()" (ngModelChange)="filterGuide.set($event); applyFilters()">
           <mat-option value="">Tutte</mat-option>
-          @for (entry of guideTypes; track entry.value) {
+          @for (entry of meta.guideTypes(); track entry.value) {
             <mat-option [value]="entry.value">{{ entry.label }}</mat-option>
           }
         </mat-select>

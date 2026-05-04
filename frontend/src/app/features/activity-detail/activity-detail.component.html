@@ -66,12 +66,12 @@
           {{ guideLabel(activity()!.guideType) }}
         </mat-chip>
       }
-      @if (activity()!.link) {
+      @for (link of activity()!.links; track link.url) {
         <mat-chip class="link-chip"
-          (click)="openLink(activity()!.link)"
-          matTooltip="Apri link esterno">
+          (click)="openLink(link.url)"
+          [matTooltip]="link.url">
           <mat-icon matChipAvatar>open_in_new</mat-icon>
-          Apri link
+          {{ link.name }}
         </mat-chip>
       }
     </div>

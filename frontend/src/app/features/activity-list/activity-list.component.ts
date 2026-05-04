@@ -21,11 +21,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatBadgeModule } from '@angular/material/badge';
 import { ActivityService } from '../../core/services/activity.service';
-import {
-  Activity,
-  ACTIVITY_TYPE_LABELS,
-  GUIDE_TYPE_LABELS,
-} from '../../core/models/activity.model';
+import { Activity } from '../../core/models/activity.model';
+import { MetadataService } from '../../core/services/metadata.service';
 import { ActivityFormDialogComponent } from '../../shared/components/activity-form-dialog.component';
 import { MarkDoneDialogComponent } from '../../shared/components/mark-done-dialog.component';
 
@@ -53,6 +50,7 @@ import { MarkDoneDialogComponent } from '../../shared/components/mark-done-dialo
 })
 export class ActivityListComponent implements OnInit {
   activityService = inject(ActivityService);
+  protected meta = inject(MetadataService);
   private router = inject(Router);
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
@@ -63,16 +61,6 @@ export class ActivityListComponent implements OnInit {
   expandedActivity = signal<Activity | null>(null);
 
   readonly displayedColumns = ['status', 'title', 'type', 'guideType', 'doneAt', 'actions'];
-
-  activityTypes = Object.entries(ACTIVITY_TYPE_LABELS).map(([value, label]) => ({
-    value,
-    label,
-  }));
-
-  guideTypes = Object.entries(GUIDE_TYPE_LABELS).map(([value, label]) => ({
-    value,
-    label,
-  }));
 
   hasActiveFilters = computed(
     () => !!(this.filterType() || this.filterDone() || this.filterGuide())
@@ -104,12 +92,11 @@ export class ActivityListComponent implements OnInit {
   }
 
   typeLabel(type: string): string {
-    return ACTIVITY_TYPE_LABELS[type as keyof typeof ACTIVITY_TYPE_LABELS] ?? type;
+    return this.meta.activityTypeLabel(type);
   }
 
   guideLabel(gt: string | null): string {
-    if (!gt) return '';
-    return GUIDE_TYPE_LABELS[gt as keyof typeof GUIDE_TYPE_LABELS] ?? gt;
+    return this.meta.guideTypeLabel(gt);
   }
 
   formatDate(dateStr: string): string {
